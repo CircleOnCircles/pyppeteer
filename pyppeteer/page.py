@@ -840,7 +840,7 @@ function deliverResult(name, seq, result) {
             return None
         entry = entries[_count]
         response = (await asyncio.gather(
-            self.waitForNavigation(options),
+            # self.waitForNavigation(options),
             self._client.send('Page.navigateToHistoryEntry', {
                 'entryId': entry.get('id')
             })
