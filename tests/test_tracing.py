@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import asyncio
 import json
 from pathlib import Path
+import unittest
 
 from syncer import sync
 
@@ -14,10 +14,10 @@ from .base import BaseTestCase
 
 class TestTracing(BaseTestCase):
     def setUp(self):
-        super().setUp()
         self.outfile = Path(__file__).parent / 'trace.json'
         if self.outfile.is_file():
             self.outfile.unlink()
+        super().setUp()
 
     def tearDown(self):
         if self.outfile.is_file():
@@ -31,7 +31,6 @@ class TestTracing(BaseTestCase):
         })
         await self.page.goto(self.url)
         await self.page.tracing.stop()
-        await asyncio.sleep(0.1)
         self.assertTrue(self.outfile.is_file())
 
     @sync
@@ -41,7 +40,6 @@ class TestTracing(BaseTestCase):
             'categories': ['disabled-by-default-v8.cpu_profiler.hires'],
         })
         await self.page.tracing.stop()
-        await asyncio.sleep(0.1)
         self.assertTrue(self.outfile.is_file())
         with self.outfile.open() as f:
             trace_json = json.load(f)
@@ -58,3 +56,25 @@ class TestTracing(BaseTestCase):
             await new_page.tracing.start({'path': str(self.outfile)})
         await new_page.close()
         await self.page.tracing.stop()
+
+    @sync
+    async def test_return_buffer(self):
+        await self.page.tracing.start(screenshots=True, path=str(self.outfile))
+        await self.page.goto(self.url + 'static/grid.html')
+        trace = await self.page.tracing.stop()
+        with self.outfile.open('r') as f:
+            buf = f.read()
+        self.assertEqual(trace, buf)
+
+    @unittest.skip('Not implemented')
+    @sync
+    async def test_return_null_on_error(self):
+        await self.page.tracing.start(screenshots=True)
+        await self.page.goto(self.url + 'static/grid.html')
+
+    @sync
+    async def test_without_path(self):
+        await self.page.tracing.start(screenshots=True)
+        await self.page.goto(self.url + 'static/grid.html')
+        trace = await self.page.tracing.stop()
+        self.assertIn('screenshot', trace)

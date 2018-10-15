@@ -1,12 +1,83 @@
 History
 =======
 
-## Version 0.0.20 (next version)
+## Version 0.0.26 (next version)
+
+* Add `$PYPPETEER_NO_PROGRESS_BAR` environment variable
+* `pyppeteer.defaultArgs` now accepts that help infer chromium command-line flags.
+* `pyppeteer.launch()` argument `ignoreDefaultArgs` now accepts a list of flags to ignore.
+* `Page.type()` now supports typing emoji
+* `Page.pdf()` accepts a new argument `preferCSSPageSize`
+* Add new option `defaultViewport` to `launch()` and `connect()`
+* Add `BrowserContext.pages()` method
+
+## Version 0.0.25 (2018-09-27)
+
+* Fix miss-spelled methods and functions
+  * Change `Browser.isIncognite` to `Browser.isIncognito`
+  * Change `Browser.createIncogniteBrowserContext` to `Browser.createIncognitoBrowserContext`
+  * Change `chromium_excutable` to `chromium_executable`
+  * Remove `craete` function in `page.py`
+
+## Version 0.0.24 (2018-09-12)
+
+Catch up puppeteer v1.6.0
+
+* Add `ElementHandle.isIntersectingViewport()`
+* Add `reportAnonymousScript` option to `Coverage.startJSCoverage()`
+* Add `Page.waitForRequest` and `Page.waitForResponse` methods
+* Now possible to attach to extension background pages with `Target.page()`
+* Improved reliability of clicking with `Page.click()` and `ElementHandle.click()`
+
+## Version 0.0.23 (2018-09-10)
+
+Catch up puppeteer v1.5.0
+
+* Add `BrowserContext` class
+* Add `Worker` class
+* Change `CDPSession.send` to a normal function which returns awaitable value
+* Add `Page.isClosed` method
+* Add `ElementHandle.querySelectorAllEval` and `ElementHandle.JJeval`
+* Add `Target.opener`
+* Add `Request.isNavigationRequest`
+
+## Version 0.0.22 (2018-09-06)
+
+Catch up puppeteer v1.4.0
+
+* Add `pyppeteer.DEBUG` variable
+* Add `Page.browser`
+* Add `Target.browser`
+* Add `ElementHandle.querySelectorEval` and `ElementHandle.Jeval`
+* Add `runBeforeUnload` option to `Page.close` method
+* Change `Page.querySelectorEval` to raise `ElementHandleError` when element which matches `selector` is not found
+* Report 'Log' domain entries as 'console' events
+* Fix `Page.goto` to return response when page pushes new state
+* (OS X) Suppress long log when extracting chromium
+
+
+## Version 0.0.21 (2018-08-21)
+
+Catch up puppeteer v1.3.0
+
+* Add `pyppeteer-install` command
+* Add `autoClose` option to `launch` function
+* Add `loop` option to `launch` function (experimental)
+* Add `Page.setBypassCSP` method
+* `Page.tracing.stop` returns result data
+* Rename `documentloaded` to `domcontentloaded` on `waitUntil` option
+* Fix `slowMo` option
+* Fix anchor navigation
+* Fix to return response via redirects
+* Continue to find WS URL while process is alive
+
+
+## Version 0.0.20 (2018-08-11)
 
 * Run on msys/cygwin, anyway
 * Raise error correctly when connection failed (PR#91)
 * Change browser download location and temporary user data directory to:
-    * If `$PYPPETEER_HOME` environment variable is defined, use this location.
+    * If `$PYPPETEER_HOME` environment variable is defined, use this location
     * Otherwise, use platform dependent locations, based on [appdirs](https://pypi.org/project/appdirs/):
         * `'C:\Users\<username>\AppData\Local\pyppeteer'` (Windows)
         * `'/Users/<username>/Library/Application Support/pyppeteer'` (OS X)
@@ -15,6 +86,7 @@ History
 
 * Introduce `$PYPPETEER_CHROMIUM_REVISION`
 * Introduce `$PYPPETEER_HOME`
+* Add `logLevel` option to `launch` and `connect` functions
 * Add page `close` event
 * Add `ElementHandle.boxModel` method
 * Add an option to disable timeout for `waitFor` functions
@@ -36,7 +108,7 @@ Catch up puppeteer v1.1.1
 * Add `Page.waitForXPath` and `Frame.waitForXPath`
 * `Page.waitFor` accepts xpath string which starts with `//`
 * Add `Response.fromCache` and `Response.fromServiceWorker`
-* Add `SecurityDetauls` class and `response.secutiryDetails`
+* Add `SecurityDetails` class and `response.securityDetails`
 * Add `Page.setCacheEnabled` method
 * Add `ExecutionContext.frame`
 * Add `dumpio` option to `launch` function
@@ -61,7 +133,7 @@ Catch up puppeteer v1.1.1
 
 ## Version 0.0.16 (2018-03-23)
 
-* BugFIx: Skip SIGHUP option on windows (windows does not support this signal)
+* BugFix: Skip SIGHUP option on windows (windows does not support this signal)
 
 
 ## Version 0.0.15 (2018-03-22)
@@ -72,7 +144,7 @@ Catch up puppeteer v1.0.0
 * Add `Page.coverage` to support JS and CSS coverage
 * Add XPath support with `Page.xpath`, `Frame.xpath`, and `ElementHandle.xpath`
 * Add `Target.createCDPSession` to work with raw Devtools Protocol
-* Change `Frame.executionContest` from property to coroutine
+* Change `Frame.executionContext` from property to coroutine
 * Add `ignoreDefaultArgs` option to `pyppeteer.launch`
 * Add `handleSIGINT`/`handleSIGTERM`/`handleSIGHUP` options to `pyppeteer.launch`
 * Add `Page.setDefaultNavigationTimeout` method
@@ -99,13 +171,13 @@ Catch up puppeteer v0.13.0
 
 * `pyppeteer.launch()` is now **coroutine**
 * Implement `connect` function
-* `PYPPETEER_DOWNLAOD_HOST` env variable specifies host part of URL to downlaod chromium
+* `PYPPETEER_DOWNLOAD_HOST` env variable specifies host part of URL to download chromium
 * Rename `setRequestInterceptionEnable` to `setRequestInterception`
 * Rename `Page.getMetrics` to `Page.metrics`
-* Implement `Browser.pages` to acccess all pages
+* Implement `Browser.pages` to access all pages
     * Add `Target` class and some new method on Browser
 * Add `ElementHandle.querySelector` and `ElementHandle.querySelectorAll`
-* Refactor NavigatoinWatcher
+* Refactor NavigatorWatcher
     * add `documentloaded`, `networkidle0`, and `networkidle2` options
 * `Request.abort` accepts error code
 * `addScriptTag` and `addStyleTag` return `ElementHandle`
@@ -119,7 +191,7 @@ Catch up puppeteer v0.13.0
     * `Page.queryObjects`
     * `Page.exposeFunction`
     * Request interception
-    * Console api
+    * Console API
     * websocket error on closing browser (#24)
 
 ## Version 0.0.12 (2018-03-01)
@@ -136,7 +208,7 @@ Catch up puppeteer v0.12.0
 * Deprecate `Page.injectFile`
 * Add `Page.querySelectorAllEval`
 * Add `Page.select` and `Page.type`
-* Add `ElementHandle.boudingBox` and `ElementHandle.screenshot`
+* Add `ElementHandle.boundingBox` and `ElementHandle.screenshot`
 * Add `ElementHandle.focus`, `ElementHandle.type`, and `ElementHandle.press`
 * Add `getMetrics` method
 * Add `offlineMode`

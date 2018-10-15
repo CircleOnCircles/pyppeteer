@@ -11,26 +11,29 @@ from pyppeteer.connection import CDPSession
 from pyppeteer.page import Page
 
 if TYPE_CHECKING:
-    from pyppeteer.browser import Browser  # noqa: F401
+    from pyppeteer.browser import Browser, BrowserContext  # noqa: F401
 
 
 class Target(object):
     """Browser's target class."""
 
-    def __init__(self, targetInfo: Dict,
+    def __init__(self, targetInfo: Dict, browserContext: 'BrowserContext',
                  sessionFactory: Callable[[], Coroutine[Any, Any, CDPSession]],
-                 ignoreHTTPSErrors: bool, appMode: bool,
-                 screenshotTaskQueue: List) -> None:
+                 ignoreHTTPSErrors: bool, defaultViewport: Optional[Dict],
+                 screenshotTaskQueue: List, loop: asyncio.AbstractEventLoop
+                 ) -> None:
         self._targetInfo = targetInfo
+        self._browserContext = browserContext
         self._targetId = targetInfo.get('targetId', '')
         self._sessionFactory = sessionFactory
         self._ignoreHTTPSErrors = ignoreHTTPSErrors
-        self._appMode = appMode
+        self._defaultViewport = defaultViewport
         self._screenshotTaskQueue = screenshotTaskQueue
-        self._page = None
+        self._loop = loop
+        self._page: Optional[Page] = None
 
-        self._initializedPromise = asyncio.get_event_loop().create_future()
-        self._isClosedPromise = asyncio.get_event_loop().create_future()
+        self._initializedPromise = self._loop.create_future()
+        self._isClosedPromise = self._loop.create_future()
         self._isInitialized = (self._targetInfo['type'] != 'page'
                                or self._targetInfo['url'] != '')
         if self._isInitialized:
@@ -39,7 +42,7 @@ class Target(object):
     def _initializedCallback(self, bl: bool) -> None:
         # TODO: this may cause error on page close
         if self._initializedPromise.done():
-            self._initializedPromise = asyncio.get_event_loop().create_future()
+            self._initializedPromise = self._loop.create_future()
         self._initializedPromise.set_result(bl)
 
     def _closedCallback(self) -> None:
@@ -50,13 +53,18 @@ class Target(object):
         return await self._sessionFactory()
 
     async def page(self) -> Optional[Page]:
-        """Get page of this target."""
-        if self._targetInfo['type'] == 'page' and self._page is None:
+        """Get page of this target.
+
+        If the target is not of type "page" or "background_page", return
+        ``None``.
+        """
+        if (self._targetInfo['type'] in ['page', 'background_page'] and
+                self._page is None):
             client = await self._sessionFactory()
             new_page = await Page.create(
                 client, self,
                 self._ignoreHTTPSErrors,
-                self._appMode,
+                self._defaultViewport,
                 self._screenshotTaskQueue,
             )
             self._page = new_page
@@ -72,13 +80,34 @@ class Target(object):
     def type(self) -> str:
         """Get type of this target.
 
-        Type can be ``'page'``, ``'service_worker'``, ``'browser'``, or
-        ``'other'``.
+        Type can be ``'page'``, ``'background_page'``, ``'service_worker'``,
+        ``'browser'``, or ``'other'``.
         """
         _type = self._targetInfo['type']
-        if _type in ['page', 'service_worker', 'browser']:
+        if _type in ['page', 'background_page', 'service_worker', 'browser']:
             return _type
         return 'other'
+
+    @property
+    def browser(self) -> 'Browser':
+        """Get the browser the target belongs to."""
+        return self._browserContext.browser
+
+    @property
+    def browserContext(self) -> 'BrowserContext':
+        """Return the browser context the target belongs to."""
+        return self._browserContext
+
+    @property
+    def opener(self) -> Optional['Target']:
+        """Get the target that opened this target.
+
+        Top-level targets return ``None``.
+        """
+        openerId = self._targetInfo.get('openerId')
+        if openerId is None:
+            return None
+        return self.browser._targets.get(openerId)
 
     def _targetInfoChanged(self, targetInfo: Dict) -> None:
         self._targetInfo = targetInfo

@@ -23,24 +23,36 @@ BASE_HTML = '''
 '''
 
 
-class MainHandler(web.RequestHandler):
+class BaseHandler(web.RequestHandler):
     def get(self) -> None:
+        self.set_header(
+            'Cache-Control',
+            'no-store, no-cache, must-revalidate, max-age=0',
+        )
+
+
+class MainHandler(BaseHandler):
+    def get(self) -> None:
+        super().get()
         self.write(BASE_HTML)
 
 
-class EmptyHandler(web.RequestHandler):
+class EmptyHandler(BaseHandler):
     def get(self) -> None:
+        super().get()
         self.write('')
 
 
-class LongHandler(web.RequestHandler):
+class LongHandler(BaseHandler):
     async def get(self) -> None:
+        super().get()
         await asyncio.sleep(0.1)
         self.write('')
 
 
-class LinkHandler1(web.RequestHandler):
+class LinkHandler1(BaseHandler):
     def get(self) -> None:
+        super().get()
         self.set_status(200)
         self.write('''
 <head><title>link1</title></head>
@@ -49,14 +61,62 @@ class LinkHandler1(web.RequestHandler):
         ''')
 
 
-class RedirectHandler1(web.RequestHandler):
+class RedirectHandler1(BaseHandler):
     def get(self) -> None:
+        super().get()
         self.redirect('/redirect2')
 
 
-class RedirectHandler2(web.RequestHandler):
+class RedirectHandler2(BaseHandler):
     def get(self) -> None:
+        super().get()
         self.write('<h1 id="red2">redirect2</h1>')
+
+
+class RedirectHandler3(BaseHandler):
+    def get(self) -> None:
+        super().get()
+        self.redirect('/static/one-frame.html')
+
+
+class ResourceRedirectHandler(BaseHandler):
+    def get(self) -> None:
+        super().get()
+        self.write(
+            '<link rel="stylesheet" href="/one-style.css">'
+            '<div>hello, world!</div>'
+        )
+
+
+class CSSRedirectHandler1(BaseHandler):
+    def get(self) -> None:
+        super().get()
+        self.redirect('/two-style.css')
+
+
+class CSSRedirectHandler2(BaseHandler):
+    def get(self) -> None:
+        super().get()
+        self.redirect('/three-style.css')
+
+
+class CSSRedirectHandler3(BaseHandler):
+    def get(self) -> None:
+        super().get()
+        self.redirect('/four-style.css')
+
+
+class CSSRedirectHandler4(BaseHandler):
+    def get(self) -> None:
+        super().get()
+        self.write('body {box-sizing: border-box;}')
+
+
+class CSPHandler(BaseHandler):
+    def get(self) -> None:
+        super().get()
+        self.set_header('Content-Security-Policy', 'script-src \'self\'')
+        self.write('')
 
 
 def auth_api(username: str, password: str) -> bool:
@@ -67,7 +127,7 @@ def auth_api(username: str, password: str) -> bool:
 
 
 def basic_auth(auth: Callable[[str, str], bool]) -> Callable:
-    def decore(f: Callable) -> Callable:
+    def wrapper(f: Callable) -> Callable:
         def _request_auth(handler: Any) -> None:
             handler.set_header('WWW-Authenticate', 'Basic realm=JSL')
             handler.set_status(401)
@@ -86,18 +146,19 @@ def basic_auth(auth: Callable[[str, str], bool]) -> Callable:
             auth_decoded = base64.b64decode(auth_header[6:])
             username, password = auth_decoded.decode('utf-8').split(':', 2)
 
-            if (auth(username, password)):
+            if auth(username, password):
                 f(*args)
             else:
                 _request_auth(handler)
 
         return new_f
-    return decore
+    return wrapper
 
 
-class AuthHandler(web.RequestHandler):
+class AuthHandler(BaseHandler):
     @basic_auth(auth_api)
     def get(self) -> None:
+        super().get()
         self.write('ok')
 
 
@@ -117,9 +178,16 @@ def get_application() -> web.Application:
         ('/1', LinkHandler1),
         ('/redirect1', RedirectHandler1),
         ('/redirect2', RedirectHandler2),
+        ('/redirect3', RedirectHandler3),
+        ('/one-style.html', ResourceRedirectHandler),
+        ('/one-style.css', CSSRedirectHandler1),
+        ('/two-style.css', CSSRedirectHandler2),
+        ('/three-style.css', CSSRedirectHandler3),
+        ('/four-style.css', CSSRedirectHandler4),
         ('/auth', AuthHandler),
         ('/empty', EmptyHandler),
         ('/long', LongHandler),
+        ('/csp', CSPHandler),
         ('/static', web.StaticFileHandler, dict(path=static_path)),
     ]
     return web.Application(
@@ -132,4 +200,5 @@ def get_application() -> web.Application:
 if __name__ == '__main__':
     app = get_application()
     app.listen(9000)
+    print('server running on http://localhost:9000')
     asyncio.get_event_loop().run_forever()
